@@ -22,12 +22,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Debug — confirm secrets are populated
-        run: |
-          if [ -n "${{ secrets.ANTHROPIC_API_KEY }}" ]; then echo "ANTHROPIC_API_KEY: SET"; else echo "ANTHROPIC_API_KEY: EMPTY"; fi
-          if [ -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then echo "CLOUDFLARE_API_TOKEN: SET"; else echo "CLOUDFLARE_API_TOKEN: EMPTY"; fi
-          if [ -n "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then echo "CLOUDFLARE_ACCOUNT_ID: SET"; else echo "CLOUDFLARE_ACCOUNT_ID: EMPTY"; fi
-
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
