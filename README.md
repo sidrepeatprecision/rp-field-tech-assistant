@@ -6,270 +6,250 @@ tools, and any procedure documented in our training guides, technical
 bulletins, or field service manuals — answered by Claude Sonnet 4.6 with our
 training corpus baked in as cached context.
 
-- **Frontend:** static mobile-first chat UI (Cloudflare Pages)
-- **Backend:** one serverless function that calls the Anthropic API (Cloudflare Pages Functions)
+- **Platform:** Cloudflare Worker + Static Assets (one project serves UI and API)
+- **Backend:** `src/index.ts` routes `/api/chat` → Anthropic; all other paths → static files
 - **Auth:** Cloudflare Access with Entra ID / Microsoft 365 SSO — only @repeatprecision.com accounts
-- **Knowledge base:** PDFs and DOCX from the training guides folder, bundled into the worker at build time
+- **Knowledge base:** PDFs and DOCX from the training guides folder, bundled into the Worker at build time
+
+```
+rp-fieldtech-assistant/
+├── src/                   # Worker code
+│   ├── index.ts           # entry — routes /api/chat, falls through to assets
+│   ├── chat.ts            # Anthropic API call + SSE passthrough
+│   ├── system-prompt.ts   # bot's rules + tone (edit to change behavior)
+│   └── knowledge.ts       # generated; replaced by build-knowledge.py
+├── public/                # mobile-first PWA chat UI
+├── scripts/build-knowledge.py
+└── wrangler.toml          # Worker config
+```
 
 ---
 
 ## 0. One-time prerequisites
 
-Install on your dev machine:
-
-- **Node.js 20+** — https://nodejs.org/ (LTS installer)
+- **Node.js 20+** — https://nodejs.org/
 - **Python 3.10+** — https://www.python.org/downloads/
-- A **Cloudflare account** — https://dash.cloudflare.com/sign-up (free tier is fine)
-- An **Anthropic API key** — see step 1 below
+- A **Cloudflare account** — https://dash.cloudflare.com/sign-up
+- An **Anthropic API key** — see step 1
+- A **GitHub account** + the repo `rp-fieldtech-assistant` pushed to it
+- **Git for Windows** — https://git-scm.com/download/win
 
-Open a terminal in this project folder. Do **not** run from `C:\Windows\System32`
-— Cygwin fork limitations break shell tools there. Use **Win+R → cmd**, then:
+**Important — Windows on ARM64:** `wrangler` doesn't run locally on Windows ARM
+because the `workerd` runtime has no ARM binary. We work around this by
+**deploying via Git → Cloudflare CI**, so wrangler only runs in Cloudflare's
+Linux build environment.
 
-```cmd
-cd /d "C:\Users\GrantMartin.AzureAD\OneDrive - RJ Machine\Documents\Claude\Projects\rp-fieldtech-assistant"
-```
+**Important — don't keep this project inside OneDrive.** OneDrive sync locks
+`node_modules/` files mid-install and breaks everything. Keep the repo at
+`C:\Users\GrantMartin.AzureAD\Projects\rp-fieldtech-assistant\` (outside any
+OneDrive folder).
 
-Install deps:
+Open PowerShell:
 
-```cmd
-npm install
+```powershell
+cd "C:\Users\GrantMartin.AzureAD\Projects\rp-fieldtech-assistant"
 pip install -r scripts/requirements.txt
 ```
+
+(`npm install` is unnecessary locally — Cloudflare runs it during deploy.)
 
 ---
 
 ## 1. Create an Anthropic API key
 
-1. Go to https://console.anthropic.com/ and sign up / log in.
-2. Create an organization (e.g. "Repeat Precision") if you don't have one.
-3. Add a payment method and a budget alert. With prompt caching, expected
-   cost is roughly $20–60/month for ~30 questions/day.
+1. https://console.anthropic.com/ → sign in.
+2. Create an organization (e.g. "Repeat Precision") if needed.
+3. Add a payment method + budget alert. Expected cost ~$20–60/month for
+   ~30 questions/day with prompt caching.
 4. **Settings → API keys → Create key.** Name it `rp-fieldtech-prod`.
-5. Copy the key (starts with `sk-ant-api03-…`). You can only see it once.
-
-Don't commit it. We'll store it as a Cloudflare secret in step 4.
+5. Copy the key (`sk-ant-api03-…`) — shown once.
 
 ---
 
 ## 2. Build the knowledge base
 
-This converts every PDF and DOCX in the training guides folder into a single
-TypeScript module that gets bundled with the worker.
+Converts every PDF and DOCX in the training guides folder into `src/knowledge.ts`:
 
-```cmd
-npm run build-knowledge
+```powershell
+python scripts/build-knowledge.py
 ```
 
-By default it reads from:
+Default source folder is the OneDrive training guides project. Override with
+`--source "path/to/folder"`. Script reports per-document character counts.
 
+Commit and push the regenerated `src/knowledge.ts`:
+
+```powershell
+git add src/knowledge.ts
+git commit -m "Update knowledge base"
+git push
 ```
-C:\Users\GrantMartin.AzureAD\OneDrive - RJ Machine\Documents\Claude\Projects\Field Tech Training Guides and Exams\
-```
 
-…and writes to `functions/_knowledge.ts`. To use a different source folder:
-
-```cmd
-python scripts/build-knowledge.py --source "path/to/folder"
-```
-
-The script reports per-document character counts and an approximate token
-total. Sanity check: total tokens should land somewhere in the 100–400K
-range for the current corpus. If a pumpdown chart PDF comes out empty or
-gibberish (charts are graph-heavy and PDF→text doesn't always preserve
-table structure), you'll see it in the warnings — you may need to manually
-add a `.md` text version next to the PDF and re-run.
+The push triggers a new Cloudflare deploy automatically.
 
 ---
 
-## 3. Test locally
+## 3. Create the Cloudflare Worker (first-time only)
 
-```cmd
-npm run dev
-```
+1. dash.cloudflare.com → **Workers & Pages → Create**.
+2. Choose **"Import a repository"** (or "Connect to Git" — whichever variant
+   your dashboard shows). Authorize Cloudflare to read your GitHub.
+3. Select `rp-fieldtech-assistant` from the repo list.
+4. **Project / Worker name:** `rp-fieldtech`.
+5. **Build configuration:**
+   - Build command: *(leave empty)*
+   - Deploy command: *(leave empty — Cloudflare auto-detects from wrangler.toml)*
+6. **Variables and Secrets → Add variable:**
+   - Name: `ANTHROPIC_API_KEY`
+   - Value: your `sk-ant-api03-…` key
+   - Type: **Secret** (so it's encrypted)
+7. **Create and Deploy.**
 
-Open http://localhost:8788 in a browser. The chat will fail with a
-configuration error until you provide the API key locally too:
+Cloudflare reads `wrangler.toml`, finds `src/index.ts` and `public/`, compiles
+the Worker, and deploys. First build is ~1–2 minutes.
 
-Create `.dev.vars` in this folder (gitignored):
-
-```
-ANTHROPIC_API_KEY=sk-ant-api03-...
-```
-
-Restart `npm run dev`, then try a question like:
-*"What's the maximum vertical line speed?"* — should cite **ENG-TB-00041**.
-
----
-
-## 4. Deploy to Cloudflare Pages
-
-First-time setup (browser opens for OAuth):
-
-```cmd
-npx wrangler login
-```
-
-Create the Pages project and deploy:
-
-```cmd
-npm run deploy
-```
-
-The first deploy prompts for the project name — use `rp-fieldtech`. After
-that the site is live at `https://rp-fieldtech.pages.dev` (or a unique
-preview subdomain like `https://abc123.rp-fieldtech.pages.dev`).
-
-Add the API key as a secret:
-
-```cmd
-npx wrangler pages secret put ANTHROPIC_API_KEY --project-name=rp-fieldtech
-```
-
-…paste the `sk-ant-api03-…` key when prompted. The site won't work until
-this is set.
+Your URL will be `https://rp-fieldtech.<your-handle>.workers.dev`.
 
 ---
 
-## 5. Lock down access — Cloudflare Access + Entra ID SSO
+## 4. Lock down with Cloudflare Access + Entra ID SSO
 
-Right now the URL is public. Lock it to @repeatprecision.com only.
+Without Access, the URL is public. To restrict to @repeatprecision.com:
 
-### 5a. Enable Zero Trust on your Cloudflare account
+### 4a. Enable Zero Trust
 
-1. Cloudflare dashboard → **Zero Trust** (left sidebar).
-2. First time: pick a team name (e.g. `repeat-precision`). Choose the
-   **Free** plan (covers up to 50 users).
+Cloudflare dashboard → **Zero Trust** (left nav). First time, pick a team
+name (e.g. `repeat-precision`). Use the **Free** plan (50 users).
 
-### 5b. Register an Entra ID application
+### 4b. Register the Entra ID application
 
-You'll need this in the Azure portal — you said you have rights to do this
-in the RP tenant.
+In https://portal.azure.com/ → **Microsoft Entra ID → App registrations → New**.
 
-1. https://portal.azure.com/ → **Microsoft Entra ID** → **App registrations**
-   → **New registration**.
-2. Name: `RP Field Tech Assistant`. Supported account types: *single tenant*.
-3. Redirect URI: **Web** + the callback URL Cloudflare gives you in step 5c
-   below (looks like `https://<team>.cloudflareaccess.com/cdn-cgi/access/callback`).
-   You can fill this in *after* you create the IdP in Cloudflare and copy
-   the callback over.
-4. After creating: copy the **Application (client) ID** and
-   **Directory (tenant) ID** from the overview page.
-5. **Certificates & secrets → New client secret.** Copy the secret value
-   immediately (only shown once).
-6. **API permissions → Add a permission → Microsoft Graph → Delegated →**
-   add `email`, `openid`, `profile`. **Grant admin consent.**
+- Name: `RP Field Tech Assistant`
+- Account types: **single tenant**
+- Redirect URI: Web + the callback Cloudflare gives you in step 4c (looks
+  like `https://<team>.cloudflareaccess.com/cdn-cgi/access/callback`)
+- Copy **Application (client) ID** and **Directory (tenant) ID**
+- **Certificates & secrets → New client secret** → copy the secret value once
+- **API permissions** → add Microsoft Graph delegated: `email`, `openid`,
+  `profile`. **Grant admin consent.**
 
-### 5c. Add Entra ID as a Cloudflare IdP
+### 4c. Add Entra ID as a Cloudflare IdP
 
-1. Zero Trust dashboard → **Settings → Authentication → Login methods →
-   Add new → Microsoft (Azure AD)**.
-2. Paste the Application (client) ID, client secret, and tenant ID from step 5b.
-3. Cloudflare shows you a redirect URL — copy it back into the Entra app
-   registration's redirect URI list (step 5b.3) if you haven't already.
-4. Click **Test** to verify the connection.
+Zero Trust → **Settings → Authentication → Login methods → Add → Microsoft
+(Azure AD)**. Paste the client ID, tenant ID, and secret. Copy Cloudflare's
+redirect URL back into the Entra app registration. **Test** the connection.
 
-### 5d. Protect the Pages app
+### 4d. Protect the Worker
 
-1. Zero Trust → **Access → Applications → Add an application →
-   Self-hosted**.
-2. Name: `RP Field Tech Assistant`.
-3. Application domain: `rp-fieldtech.pages.dev` (or your custom domain).
-4. Identity providers: enable **Microsoft (Azure AD)** only. Optionally
-   disable the One-time PIN fallback.
-5. Session duration: 24h is reasonable for field use.
-6. **Add a policy → Allow**:
-   - Action: Allow
-   - Include: **Emails ending in** `@repeatprecision.com`
-7. Save.
+Zero Trust → **Access → Applications → Add → Self-hosted**.
 
-Now hit `https://rp-fieldtech.pages.dev` — it should redirect to Microsoft
-login, then back to the chat UI.
+- Name: `RP Field Tech Assistant`
+- Application domain: `rp-fieldtech.<your-handle>.workers.dev`
+- Identity providers: enable **Microsoft (Azure AD)** only (disable
+  One-Time PIN fallback)
+- Session duration: 24h
+- Policy: **Allow → Include → Emails ending in** `@repeatprecision.com`
+
+Visit your URL — should redirect to Microsoft login, then the chat UI.
 
 ---
 
-## 6. Install on a tech's phone
+## 5. Install on a phone
 
-iPhone / Safari:
-1. Open the URL, sign in.
-2. Tap **Share → Add to Home Screen**.
-3. The icon appears like a native app; opens fullscreen.
+**iPhone (Safari):** Open URL → sign in → Share → **Add to Home Screen**.
 
-Android / Chrome:
-1. Open the URL, sign in.
-2. Menu (⋮) → **Add to Home screen** or **Install app**.
-3. Same fullscreen experience.
+**Android (Chrome):** Open URL → sign in → ⋮ menu → **Install app** / **Add to Home screen**.
 
 ---
 
-## 7. Updating documents
+## 6. Updating documents
 
-When training guides or bulletins change in the source OneDrive folder:
+When training docs change in the source OneDrive folder:
 
-```cmd
-npm run build-knowledge
-npm run deploy
+```powershell
+python scripts/build-knowledge.py
+git add src/knowledge.ts
+git commit -m "Update knowledge base — <what changed>"
+git push
 ```
 
-That's it — regenerates `functions/_knowledge.ts` and ships a new deploy.
-Cloudflare Pages keeps the previous version for instant rollback.
+Cloudflare auto-deploys in ~1 minute.
 
 ---
 
-## 8. Adjusting the bot's behavior
+## 7. Adjusting bot behavior
 
 | File | What's in it |
 |------|--------------|
-| `functions/_system-prompt.ts` | The rules, tone, citation format, refusal message |
-| `functions/api/chat.ts`       | Model choice (`MODEL`), max output tokens, API call |
-| `public/index.html`           | Welcome text and header copy |
-| `public/style.css`            | Colors (brand `#1E2D5B`), layout, dark mode |
+| `src/system-prompt.ts` | Rules, tone, citation format, refusal message |
+| `src/chat.ts`          | Model choice (`MODEL`), max output tokens, API call |
+| `src/index.ts`         | Routing (currently only `/api/chat`) |
+| `public/index.html`    | Welcome text and header copy |
+| `public/style.css`     | Colors (brand `#1E2D5B`), layout, dark mode |
 
-To switch models: change `MODEL` in `functions/api/chat.ts`:
+Switch models in `src/chat.ts` — change `MODEL`:
 - `claude-haiku-4-5-20251001` — 3–5× cheaper, slightly less rigorous
 - `claude-sonnet-4-6` — current default
-- `claude-opus-4-7` — overkill for this use case, ~5× more expensive than Sonnet
+- `claude-opus-4-7` — overkill, ~5× more expensive than Sonnet
+
+Push the change to redeploy.
 
 ---
 
-## 9. Icons (todo)
-
-The PWA manifest references `/icon-192.png` and `/icon-512.png` — these
-don't exist yet, so on Android the install banner won't show until you add
-them. Drop two PNGs (192×192 and 512×512) into `public/` whenever you
-have a logo. The site otherwise works without them.
-
----
-
-## 10. Cost monitoring
+## 8. Cost monitoring
 
 - **Anthropic Console → Usage** — track API spend. Set a budget alert.
-- **Cloudflare dashboard → Pages → rp-fieldtech → Functions** — request
-  count and CPU time. Free tier covers 100K requests/day.
+- **Cloudflare dashboard → Workers → rp-fieldtech → Metrics** — request count
+  and CPU time. Free tier covers 100K requests/day.
 
 Sonnet 4.6 with cached system prompt (~200K tokens):
 - First request in a 5-min window: ~$0.60 (cache write)
-- Subsequent requests in that window: ~$0.02–0.05
-- 30 questions/day, spread across the day: $20–60/month
+- Subsequent in that window: ~$0.02–0.05
+- 30 questions/day across the day: $20–60/month
 
-To reduce cost: switch to Haiku 4.5 (see section 8) or trim the corpus by
-removing low-value docs.
+To reduce cost: switch to Haiku 4.5 (section 7) or trim the corpus.
 
 ---
 
-## 11. Troubleshooting
+## 9. Troubleshooting
+
+**Build fails: "Workers-specific command in a Pages project" or vice versa.**
+The project was created as the wrong type. Delete it and re-create with the
+matching type. This repo expects a **Worker** (uses `wrangler.toml` with
+`main`, `[assets]`, and `run_worker_first`).
+
+**`/api/chat` returns the HTML page.**
+The Worker isn't running. Check that `wrangler.toml` has
+`run_worker_first = true` under `[assets]` — otherwise static assets are
+served first and the Worker never sees the request.
 
 **"ANTHROPIC_API_KEY secret is not configured."**
-You haven't run `wrangler pages secret put ANTHROPIC_API_KEY …` yet (step 4),
-or you're in local dev without a `.dev.vars` file (step 3).
+Add the env var in Workers dashboard → Settings → Variables and Secrets →
+mark it as a Secret.
 
-**Empty or garbage text for a pumpdown chart PDF.**
+**Empty / garbage text for a pumpdown chart PDF.**
 `pymupdf4llm` can't read graph-heavy PDFs as tables. Create a `.md` text
-version of the chart alongside the PDF and rebuild. The script picks up
-both file types.
+version alongside the PDF and rebuild.
 
-**Cloudflare Access prompts a tech for a OTP instead of Microsoft login.**
-You forgot to disable the One-Time PIN fallback in the app's identity
-provider list (step 5d.4).
+**Cloudflare Access prompts a tech for a One-Time PIN instead of Microsoft login.**
+You forgot to disable the One-Time PIN fallback in the Access app's identity
+providers (step 4d).
 
-**Wrangler hangs on `Resource temporarily unavailable`.**
-You're running from `C:\Windows\System32`. `cd` into the project folder first.
+**`npm install` fails with `EBUSY` / `Unsupported platform: win32 arm64`.**
+You're on Windows ARM64 and/or inside OneDrive. Don't run `npm install`
+locally — let Cloudflare do it. See "Important" notes in section 0.
+
+---
+
+## 10. Old folder cleanup
+
+The original Pages-style code in `functions/` is no longer used (replaced by
+`src/`). Delete it once everything works:
+
+```powershell
+Remove-Item -Recurse -Force functions
+git add -A
+git commit -m "Remove unused Pages Functions code"
+git push
+```

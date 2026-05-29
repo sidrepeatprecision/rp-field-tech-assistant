@@ -4,8 +4,8 @@ Usage:
     python scripts/build-knowledge.py
     python scripts/build-knowledge.py --source "path/to/training folder"
 
-Produces functions/_knowledge.ts which exports the corpus as a const string.
-The chat Function imports it and sends it to Anthropic as a cached system block.
+Produces src/knowledge.ts which exports the corpus as a const string.
+The Worker imports it and sends it to Anthropic as a cached system block.
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ DEFAULT_SOURCE = (
     / "Field Tech Training Guides and Exams"
 )
 
-OUT_FILE = Path(__file__).resolve().parent.parent / "functions" / "_knowledge.ts"
+OUT_FILE = Path(__file__).resolve().parent.parent / "src" / "knowledge.ts"
 
 # Files to skip — not useful as text context.
 SKIP_EXACT = {"CLAUDE.md"}

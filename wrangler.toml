@@ -1,9 +1,11 @@
-# Minimal config for Cloudflare Pages.
-# Project name, env vars, and build settings live in the Cloudflare dashboard.
-# This file only sets the Pages Functions runtime compatibility date.
-
+name = "rp-fieldtech"
+main = "src/index.ts"
 compatibility_date = "2024-09-23"
-pages_build_output_dir = "public"
 
-# Required secret (set in dashboard → Settings → Environment variables):
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true
+
+# Required secret (set in dashboard → Settings → Variables and Secrets):
 #   ANTHROPIC_API_KEY — sk-ant-api03-...
