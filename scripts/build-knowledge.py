@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -47,10 +48,24 @@ def convert_pdf(path: Path) -> str:
     return pymupdf4llm.to_markdown(str(path))
 
 
+# mammoth's default image handler inlines images as huge base64 data URIs,
+# which blows up the corpus by 100× and gives Claude no useful information
+# (it can't see images via base64 in text). Drop image content entirely.
+_DROP_IMAGE = mammoth.images.img_element(lambda image: {"src": ""})
+
+# Catches both markdown ![alt](data:...) and HTML <img src="data:..."> just
+# in case anything sneaks through.
+_DATA_URI_MD = re.compile(r"!\[[^\]]*\]\(data:[^)]+\)")
+_DATA_URI_HTML = re.compile(r'<img[^>]*src="data:[^"]+"[^>]*/?>')
+
+
 def convert_docx(path: Path) -> str:
     with path.open("rb") as f:
-        result = mammoth.convert_to_markdown(f)
-        return result.value
+        result = mammoth.convert_to_markdown(f, convert_image=_DROP_IMAGE)
+    body = result.value
+    body = _DATA_URI_MD.sub("[image]", body)
+    body = _DATA_URI_HTML.sub("[image]", body)
+    return body
 
 
 def collect_docs(source: Path) -> list[tuple[str, str]]:
