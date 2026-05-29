@@ -1,9 +1,9 @@
-name = "rp-fieldtech"
+# Minimal config for Cloudflare Pages.
+# Project name, env vars, and build settings live in the Cloudflare dashboard.
+# This file only sets the Pages Functions runtime compatibility date.
+
 compatibility_date = "2024-09-23"
 pages_build_output_dir = "public"
 
-# Secrets are NOT defined here. Set them with:
-#   wrangler pages secret put ANTHROPIC_API_KEY --project-name=rp-fieldtech
-#
-# Required secrets:
+# Required secret (set in dashboard → Settings → Environment variables):
 #   ANTHROPIC_API_KEY — sk-ant-api03-...
