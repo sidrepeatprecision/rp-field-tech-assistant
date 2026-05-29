@@ -2,6 +2,10 @@ name = "rp-fieldtech"
 main = "src/index.ts"
 compatibility_date = "2024-09-23"
 
+# Preserve dashboard-set vars and secrets across Git deploys. Without this,
+# every deploy clears them because wrangler.toml doesn't declare them.
+keep_vars = true
+
 [assets]
 directory = "./public"
 binding = "ASSETS"
