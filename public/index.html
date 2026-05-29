@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1E2D5B">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RP Field Tech">
+  <title>RP Field Tech Assistant</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="icon" type="image/png" href="/icon-192.png">
+  <link rel="stylesheet" href="/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked@13.0.3/marked.min.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-title">RP Field Tech</div>
+    <button id="new-chat" class="ghost-btn" type="button" aria-label="Start new chat">New</button>
+  </header>
+
+  <main id="messages" class="messages" aria-live="polite">
+    <div class="welcome">
+      <p>Ask about PurpleSeal™ / PurpleReign™ frac plugs, pumpdown rates, WLAK components, shear ratings, setting tools, or any ENG-TB bulletin.</p>
+      <p class="muted">If the docs don't cover it, contact your supervisor or engineering.</p>
+    </div>
+  </main>
+
+  <form id="composer" class="composer" autocomplete="off">
+    <textarea
+      id="prompt"
+      name="prompt"
+      rows="1"
+      placeholder="Ask a question…"
+      enterkeyhint="send"
+      autocapitalize="sentences"
+      autocomplete="off"
+      autocorrect="on"
+      spellcheck="true"
+      required></textarea>
+    <button id="send" type="submit" aria-label="Send">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path fill="currentColor" d="M2 21l21-9L2 3v7l15 2-15 2z"/>
+      </svg>
+    </button>
+  </form>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>

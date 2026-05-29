@@ -1,0 +1,9 @@
+name = "rp-fieldtech"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "public"
+
+# Secrets are NOT defined here. Set them with:
+#   wrangler pages secret put ANTHROPIC_API_KEY --project-name=rp-fieldtech
+#
+# Required secrets:
+#   ANTHROPIC_API_KEY — sk-ant-api03-...
