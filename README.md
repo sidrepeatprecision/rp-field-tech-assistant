@@ -225,8 +225,16 @@ The Worker isn't running. Check that `wrangler.toml` has
 served first and the Worker never sees the request.
 
 **"ANTHROPIC_API_KEY secret is not configured."**
-Add the env var in Workers dashboard → Settings → Variables and Secrets →
-mark it as a Secret.
+The secret needs to be set as a GitHub Actions Repository secret (not in the
+Cloudflare dashboard). The GH Actions workflow uploads it via
+`wrangler secret put` on each deploy. Check
+github.com/<user>/rp-fieldtech-assistant/settings/secrets/actions.
+
+**Cloudflare Access shows login page but no OTP email arrives, and no logs.**
+The policy rule type is wrong. Use **"Emails ending in"** (matches a whole
+domain), NOT **"Emails"** (requires an exact, single email address). With
+"Emails", any address not exactly matching is silently blocked before OTP
+is ever sent — that's why no email arrives and no log appears.
 
 **Empty / garbage text for a pumpdown chart PDF.**
 `pymupdf4llm` can't read graph-heavy PDFs as tables. Create a `.md` text
