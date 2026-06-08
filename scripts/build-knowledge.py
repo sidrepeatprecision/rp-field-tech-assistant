@@ -1,4 +1,4 @@
-"""Convert the Field Tech training corpus (PDF + DOCX) into a single TS module.
+"""Convert the Field Tech training corpus (PDF + DOCX + Markdown) into a single TS module.
 
 Usage:
     python scripts/build-knowledge.py
@@ -68,6 +68,11 @@ def convert_docx(path: Path) -> str:
     return body
 
 
+def convert_md(path: Path) -> str:
+    # utf-8-sig strips a BOM if Notepad/Word saved one; plain UTF-8 otherwise.
+    return path.read_text(encoding="utf-8-sig")
+
+
 def collect_docs(source: Path) -> list[tuple[str, str]]:
     """Return list of (display_title, markdown_body)."""
     out: list[tuple[str, str]] = []
@@ -87,6 +92,8 @@ def collect_docs(source: Path) -> list[tuple[str, str]]:
                 body = convert_pdf(path)
             elif path.suffix.lower() == ".docx":
                 body = convert_docx(path)
+            elif path.suffix.lower() == ".md":
+                body = convert_md(path)
             else:
                 print(f"  SKIP (unknown): {path.name}", file=sys.stderr)
                 continue
