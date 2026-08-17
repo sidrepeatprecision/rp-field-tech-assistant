@@ -1,6 +1,15 @@
-// System instructions for the field tech assistant.
-// Edit this file to change the bot's behavior, tone, or fallback message.
-// The knowledge base is concatenated onto the end of this at request time.
+/**
+ * System instructions for the Field Tech Assistant.
+ * --------------------------------------------------
+ * This is the "rulebook" prepended to every conversation. It defines the bot's
+ * behavior, tone, citation format, and its refusal message for out-of-scope
+ * questions. At request time (see src/chat.ts) the training-guide corpus is
+ * concatenated onto the END of this string and the whole thing is sent as one
+ * cached system block.
+ *
+ * This IS the bot's behavior — edit the text below to change how it answers.
+ * Keep it precise: the model follows these rules closely.
+ */
 
 export const SYSTEM_INSTRUCTIONS = `You are the Repeat Precision Field Technician Assistant. Your job is to help RP field technicians find accurate information about PurpleSeal™ and PurpleReign™ frac plug products, procedures, and specifications.
 

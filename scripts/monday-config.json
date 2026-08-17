@@ -1,0 +1,115 @@
+{
+  "_comment": "Phase 0 discovery output — the map the monday build step reads. Column IDs/types confirmed against the live boards on the discovery date. Regenerate/verify if board structure changes.",
+  "account": "repeat-precision.monday.com",
+  "workspace_id": "6801515",
+
+  "catalog_doc": {
+    "object_id": "18424921270",
+    "doc_id": "45339811",
+    "title": "Field Technician AI — Directory Skills Catalog",
+    "include_in_corpus": true,
+    "_comment": "Decision: index + context. Drives what we parse (the two boards below) AND is included as an orienting section in the corpus."
+  },
+
+  "boards": [
+    {
+      "id": "18417663477",
+      "name": "RP Document Library",
+      "items_count": 45,
+      "expects_full_text": true,
+      "_comment": "Full document text is posted to each item's UPDATES thread by monday's existing 'Extract File Data' workflow. Read columns + updates. Do NOT open/parse the attached files. expects_full_text=true so items missing extracted text get flagged.",
+      "content_sources": {
+        "columns": true,
+        "updates": true,
+        "item_description": false,
+        "subitems": false,
+        "attachments": false
+      },
+      "include_columns": [
+        { "id": "dropdown_mm4946c3", "title": "Document Type" },
+        { "id": "dropdown_mm4babh6", "title": "Applies To" },
+        { "id": "dropdown_mm49y8ng", "title": "Plug Size" },
+        { "id": "dropdown_mm49a8b3", "title": "Casing Size" },
+        { "id": "text_mm4bvc10", "title": "Casing Weight" },
+        { "id": "color_mm497xvs", "title": "Status" },
+        { "id": "text_mm49q2rf", "title": "Revision" },
+        { "id": "date_mm498zw1", "title": "Effective Date" },
+        { "id": "date_mm49tbhk", "title": "Last Verified" },
+        { "id": "long_text_mm49sf2h", "title": "Revision Notes / Change List" }
+      ],
+      "skip_columns": [
+        { "id": "file_mm4990ye", "title": "File", "reason": "attachment — do not open; text is in updates" },
+        { "id": "file_mm4bdv32", "title": "Editable (or Private) Files", "reason": "private/confidential attachment" },
+        { "id": "button_mm49btg2", "title": "Extract Document Data", "reason": "UI button, no content" },
+        { "id": "long_text_mm49agf8", "title": "Owners List of Needed Improvements/Changes", "reason": "owner scratchpad — catalog marks as non-authoritative" },
+        { "id": "board_relation_mm49r3sa", "title": "Supersedes", "reason": "revision link — optional, adds little text" }
+      ],
+      "status_filter": {
+        "column": "color_mm497xvs",
+        "include": ["Active"],
+        "consider_including": ["Draft"],
+        "exclude": ["Old Revision", "Obsolete"],
+        "_comment": "Default to current guidance only. Old Revision/Obsolete live in the Archive group and would bloat the corpus with stale content."
+      },
+      "groups": [
+        { "id": "group_mm49zpvc", "title": "Field Service Manuals" },
+        { "id": "group_mm49heca", "title": "SOPs" },
+        { "id": "group_mm49efza", "title": "Pump Down Charts" },
+        { "id": "group_mm494ar7", "title": "Archive" }
+      ]
+    },
+
+    {
+      "id": "18408235123",
+      "name": "Master Parts List",
+      "items_count": 195,
+      "subitems_board_id": "18408252136",
+      "_comment": "Clean structured data — no file attachments. WLAK group MAY carry deeper detail in subitems/description per the catalog, but sampled WLAK items had empty subitems; verify before relying on it.",
+      "content_sources": {
+        "columns": true,
+        "updates": true,
+        "item_description": true,
+        "subitems": { "for_groups": ["group_mm2acm5f"] },
+        "attachments": false
+      },
+      "include_columns": [
+        { "id": "text_mm2az9sr", "title": "PN" },
+        { "id": "text_mm2a4cgd", "title": "REV" },
+        { "id": "dropdown_mm2aqxhd", "title": "Status" },
+        { "id": "dropdown_mm2amka8", "title": "Product Line" },
+        { "id": "dropdown_mm2ahme4", "title": "Product Size" },
+        { "id": "dropdown_mm2agq54", "title": "Detail Configuration" },
+        { "id": "dropdown_mm2a2a2q", "title": "Special Configuration" },
+        { "id": "text_mm2ajvxm", "title": "Casing Size & Weight" },
+        { "id": "long_text_mm2aqv26", "title": "Notes" },
+        { "id": "tag_mm2acyve", "title": "Casing Size" }
+      ],
+      "skip_columns": [
+        { "id": "subtasks_mm2aaghk", "title": "Subitems", "reason": "handled via subitems fetch, not as a column value" }
+      ],
+      "status_filter": {
+        "column": "dropdown_mm2aqxhd",
+        "exclude": ["Obsolete"],
+        "_comment": "Keep everything else; label each part's status so the model can flag On Hold / Phasing Out / Initial Field Trials appropriately."
+      },
+      "groups": [
+        { "id": "group_mm2askns", "title": "PurpleSeal Frac Plugs" },
+        { "id": "group_mm2aqeap", "title": "PurpleSeal StageSaver" },
+        { "id": "group_mm2a360a", "title": "PurpleReign Frac Plugs" },
+        { "id": "group_mm2a4bsy", "title": "PurpleSeal Bridge Plugs" },
+        { "id": "group_mm2acm5f", "title": "WLAK Assemblies", "note": "Group title carries a live cross-reference: 'ADJ NUT 14435 = 60409; Legacy Adj Nut is now 60536' — capture the group title text into the corpus." },
+        { "id": "group_mm2a1vxf", "title": "PurpleSeal FSE" },
+        { "id": "group_mm2ardxj", "title": "PurpleReign FSE" },
+        { "id": "group_mm2a82bt", "title": "Pump Down Nose Assemblies" },
+        { "id": "group_mm2a5qs4", "title": "Setting Tools (RP10 & RP20)" },
+        { "id": "group_mm2arcge", "title": "Component Parts (Frac Balls & XOs)" }
+      ]
+    }
+  ],
+
+  "out_of_scope_boards": {
+    "_comment": "The catalog Doc also documents these two boards, but they are NOT part of this project and carry sensitivity constraints (do not surface individual records / customer / pricing data). Listed here only so a future maintainer knows they exist and why they were excluded.",
+    "First Alert Tracker": { "id": "18404527986", "items": 1087, "reason": "failure-case data; pattern-summary only, not record lookup" },
+    "US Operations Board": { "id": "74284156", "reason": "live customer/order/pricing data; commercially sensitive" }
+  }
+}

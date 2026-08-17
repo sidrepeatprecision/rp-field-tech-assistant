@@ -4,7 +4,8 @@
   "private": true,
   "description": "Mobile web agent for Repeat Precision field technicians to ask about PurpleSeal/PurpleReign products and procedures.",
   "scripts": {
-    "build-knowledge": "python scripts/build-knowledge.py",
+    "build-knowledge": "python scripts/build_knowledge_monday.py",
+    "build-knowledge:legacy-onedrive": "python scripts/build-knowledge.py",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit"

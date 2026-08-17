@@ -1,11 +1,25 @@
-"""Convert the Field Tech training corpus (PDF + DOCX + Markdown) into a single TS module.
+"""Build the Field Tech knowledge base bundled into the Worker.
 
-Usage:
+WHAT THIS DOES
+--------------
+Walks a source folder of training material (PDF, DOCX, and Markdown files),
+converts every document to plain Markdown text, stitches them into one big
+string, and writes that string to `src/knowledge.ts`.
+
+The Worker imports `KNOWLEDGE_BASE` from that generated file and sends it to
+Claude as a cached system block (see src/chat.ts). This is why there is no
+vector database or retrieval step: the entire corpus rides along in context,
+and prompt caching keeps that cheap.
+
+WHEN TO RUN IT
+--------------
+Any time the source documents change. Regenerate, then commit and push
+`src/knowledge.ts` — the push triggers a Cloudflare deploy. See README §6.
+
+USAGE
+-----
     python scripts/build-knowledge.py
     python scripts/build-knowledge.py --source "path/to/training folder"
-
-Produces src/knowledge.ts which exports the corpus as a const string.
-The Worker imports it and sends it to Anthropic as a cached system block.
 """
 
 from __future__ import annotations
@@ -16,6 +30,10 @@ import re
 import sys
 from pathlib import Path
 
+# --- Third-party document converters ---
+# pymupdf4llm: PDF  -> Markdown.  mammoth: DOCX -> Markdown/HTML.
+# Both are optional at import time so we can print a friendly install hint
+# instead of a raw ImportError traceback.
 try:
     import pymupdf4llm
 except ImportError:
@@ -27,6 +45,12 @@ except ImportError:
     sys.exit("Missing mammoth. Run: pip install -r scripts/requirements.txt")
 
 
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
+
+# Default source folder: the OneDrive "Field Tech Training Guides and Exams"
+# project. Override on the command line with --source.
 DEFAULT_SOURCE = (
     Path.home()
     / "OneDrive - RJ Machine"
@@ -36,30 +60,38 @@ DEFAULT_SOURCE = (
     / "Field Tech Training Guides and Exams"
 )
 
+# Where the generated corpus module is written (repo-root/src/knowledge.ts).
 OUT_FILE = Path(__file__).resolve().parent.parent / "src" / "knowledge.ts"
 
-# Files to skip — not useful as text context.
-SKIP_EXACT = {"CLAUDE.md"}
-SKIP_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".xlsx", ".html"}
-SKIP_DIRS = {"scripts", ".git", "node_modules"}
+# Files/folders to skip — not useful as text context for the bot.
+SKIP_EXACT = {"CLAUDE.md"}                                      # project meta, not training content
+SKIP_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".xlsx", ".html"}  # images / sheets / raw html
+SKIP_DIRS = {"scripts", ".git", "node_modules"}                # never descend into these
 
+
+# ---------------------------------------------------------------------------
+# Per-format converters
+# ---------------------------------------------------------------------------
 
 def convert_pdf(path: Path) -> str:
+    """PDF -> Markdown text."""
     return pymupdf4llm.to_markdown(str(path))
 
 
-# mammoth's default image handler inlines images as huge base64 data URIs,
-# which blows up the corpus by 100× and gives Claude no useful information
-# (it can't see images via base64 in text). Drop image content entirely.
+# mammoth's default image handler inlines every embedded image as a giant
+# base64 data URI. That balloons the corpus ~100x (a single Word doc went from
+# a few KB of text to 1.45M characters) and gives Claude nothing useful, since
+# it can't "see" a base64 blob in text. So we drop image content entirely.
 _DROP_IMAGE = mammoth.images.img_element(lambda image: {"src": ""})
 
-# Catches both markdown ![alt](data:...) and HTML <img src="data:..."> just
-# in case anything sneaks through.
+# Belt-and-suspenders: strip any data-URI images that still slip through, in
+# both Markdown (![alt](data:...)) and HTML (<img src="data:...">) form.
 _DATA_URI_MD = re.compile(r"!\[[^\]]*\]\(data:[^)]+\)")
 _DATA_URI_HTML = re.compile(r'<img[^>]*src="data:[^"]+"[^>]*/?>')
 
 
 def convert_docx(path: Path) -> str:
+    """DOCX -> Markdown text, with embedded images stripped out."""
     with path.open("rb") as f:
         result = mammoth.convert_to_markdown(f, convert_image=_DROP_IMAGE)
     body = result.value
@@ -69,16 +101,28 @@ def convert_docx(path: Path) -> str:
 
 
 def convert_md(path: Path) -> str:
-    # utf-8-sig strips a BOM if Notepad/Word saved one; plain UTF-8 otherwise.
+    """Markdown -> text (read as-is)."""
+    # utf-8-sig transparently strips a byte-order mark if Notepad/Word added
+    # one; it behaves like plain UTF-8 otherwise.
     return path.read_text(encoding="utf-8-sig")
 
 
+# ---------------------------------------------------------------------------
+# Collection and assembly
+# ---------------------------------------------------------------------------
+
 def collect_docs(source: Path) -> list[tuple[str, str]]:
-    """Return list of (display_title, markdown_body)."""
+    """Convert every supported file under `source`.
+
+    Returns a list of (display_title, markdown_body) tuples, one per document,
+    sorted by path so the corpus is deterministic between builds.
+    """
     out: list[tuple[str, str]] = []
+
     for path in sorted(source.rglob("*")):
         if not path.is_file():
             continue
+        # Skip anything inside an excluded directory (scripts/, .git/, ...).
         if any(part in SKIP_DIRS for part in path.relative_to(source).parts):
             continue
         if path.name in SKIP_EXACT:
@@ -86,7 +130,7 @@ def collect_docs(source: Path) -> list[tuple[str, str]]:
         if path.suffix.lower() in SKIP_SUFFIXES:
             continue
 
-        title = path.stem
+        title = path.stem  # filename without extension, used as the section label
         try:
             if path.suffix.lower() == ".pdf":
                 body = convert_pdf(path)
@@ -98,6 +142,7 @@ def collect_docs(source: Path) -> list[tuple[str, str]]:
                 print(f"  SKIP (unknown): {path.name}", file=sys.stderr)
                 continue
         except Exception as e:
+            # One bad file shouldn't abort the whole build — log and move on.
             print(f"  ERROR: {path.name}: {e}", file=sys.stderr)
             continue
 
@@ -112,6 +157,8 @@ def collect_docs(source: Path) -> list[tuple[str, str]]:
 
 
 def build_corpus(docs: list[tuple[str, str]]) -> str:
+    """Join all documents into one string, each under a `=== SOURCE: ... ===`
+    header so the model can cite which document an answer came from."""
     parts: list[str] = []
     for title, body in docs:
         parts.append(f"\n\n=== SOURCE: {title} ===\n\n{body}")
@@ -119,8 +166,10 @@ def build_corpus(docs: list[tuple[str, str]]) -> str:
 
 
 def write_module(corpus: str) -> None:
+    """Write the corpus to src/knowledge.ts as an exported const string."""
     OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    # JSON.stringify-style escape: handles backticks, backslashes, dollar signs, newlines.
+    # json.dumps gives us a correctly-escaped JS string literal: it handles
+    # quotes, backslashes, newlines, and dollar signs so the .ts file is valid.
     escaped = json.dumps(corpus)
     contents = (
         "// AUTO-GENERATED by scripts/build-knowledge.py — DO NOT EDIT BY HAND.\n"
@@ -129,6 +178,10 @@ def write_module(corpus: str) -> None:
     )
     OUT_FILE.write_text(contents, encoding="utf-8")
 
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -152,6 +205,8 @@ def main() -> int:
     corpus = build_corpus(docs)
     write_module(corpus)
 
+    # Summary — the token estimate is rough (~4 chars/token) but good enough to
+    # sanity-check that the corpus still fits comfortably in the model's context.
     print()
     print(f"Wrote {OUT_FILE}")
     print(f"  Documents: {len(docs)}")

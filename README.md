@@ -3,7 +3,7 @@
 Mobile web agent for Repeat Precision field technicians. Ask questions about
 PurpleSeal™/PurpleReign™ frac plugs, pumpdown rates, WLAK components, setting
 tools, and any procedure documented in our training guides, technical
-bulletins, or field service manuals — answered by Claude Sonnet 4.6 with our
+bulletins, or field service manuals — answered by Claude Sonnet 5 with our
 training corpus baked in as cached context.
 
 - **Platform:** Cloudflare Worker + Static Assets (one project serves UI and API)
@@ -189,9 +189,9 @@ Cloudflare auto-deploys in ~1 minute.
 | `public/style.css`     | Colors (brand `#1E2D5B`), layout, dark mode |
 
 Switch models in `src/chat.ts` — change `MODEL`:
-- `claude-haiku-4-5-20251001` — 3–5× cheaper, slightly less rigorous
-- `claude-sonnet-4-6` — current default
-- `claude-opus-4-7` — overkill, ~5× more expensive than Sonnet
+- `claude-haiku-4-5` — 3–5× cheaper, slightly less rigorous
+- `claude-sonnet-5` — current default
+- `claude-opus-5` — overkill, more expensive than Sonnet
 
 Push the change to redeploy.
 
@@ -203,7 +203,7 @@ Push the change to redeploy.
 - **Cloudflare dashboard → Workers → rp-fieldtech → Metrics** — request count
   and CPU time. Free tier covers 100K requests/day.
 
-Sonnet 4.6 with cached system prompt (~200K tokens):
+Sonnet 5 with cached system prompt (~200K tokens):
 - First request in a 5-min window: ~$0.60 (cache write)
 - Subsequent in that window: ~$0.02–0.05
 - 30 questions/day across the day: $20–60/month

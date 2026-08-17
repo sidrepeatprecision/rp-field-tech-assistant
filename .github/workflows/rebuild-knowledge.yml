@@ -1,0 +1,80 @@
+name: Rebuild knowledge base
+
+# Regenerates src/knowledge.ts from monday.com and redeploys the Worker.
+# Triggered by:
+#   - repository_dispatch "monday-changed" — sent by the Worker relay when a
+#     watched monday board changes (src/monday-webhook.ts)
+#   - a nightly schedule — self-healing fallback in case a webhook is missed
+#   - manual run (workflow_dispatch)
+on:
+  repository_dispatch:
+    types: [monday-changed]
+  schedule:
+    - cron: "0 8 * * *"   # ~08:00 UTC daily
+  workflow_dispatch:
+
+# Collapse a burst of monday webhooks into a single run (later triggers cancel
+# an in-flight rebuild).
+concurrency:
+  group: rebuild-knowledge
+  cancel-in-progress: true
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to commit the regenerated knowledge.ts
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # The monday builder only needs `requests` (no PDF libs), so install just
+      # that to keep the run fast.
+      - name: Install Python deps
+        run: pip install requests
+
+      - name: Build knowledge base from monday
+        run: python scripts/build_knowledge_monday.py
+        env:
+          MONDAY_API_TOKEN: ${{ secrets.MONDAY_API_TOKEN }}
+
+      - name: Commit knowledge.ts if it changed
+        run: |
+          git config user.name "rp-fieldtech-bot"
+          git config user.email "rp-fieldtech-bot@users.noreply.github.com"
+          if git diff --quiet -- src/knowledge.ts; then
+            echo "No knowledge-base changes."
+          else
+            git add src/knowledge.ts
+            git commit -m "chore: rebuild knowledge base from monday.com"
+            git push
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Node deps for deploy
+        run: npm install
+
+      # Deploy in this same job. (A push made with GITHUB_TOKEN does not trigger
+      # deploy.yml, so we deploy here rather than relying on the push.)
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Re-assert the Worker secrets on deploy (values from GH Actions secrets).
+          secrets: |
+            ANTHROPIC_API_KEY
+            MONDAY_WEBHOOK_SECRET
+            GH_DISPATCH_TOKEN
+            GH_REPO
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MONDAY_WEBHOOK_SECRET: ${{ secrets.MONDAY_WEBHOOK_SECRET }}
+          GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
+          GH_REPO: ${{ secrets.GH_REPO }}

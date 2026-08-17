@@ -11,5 +11,9 @@ directory = "./public"
 binding = "ASSETS"
 run_worker_first = true
 
-# Required secret (set in dashboard → Settings → Variables and Secrets):
-#   ANTHROPIC_API_KEY — sk-ant-api03-...
+# Worker secrets (managed via GitHub Actions — the deploy workflows run
+# `wrangler secret put` before deploying; values come from repo Actions secrets):
+#   ANTHROPIC_API_KEY      — Anthropic API key (sk-ant-api03-...)          [required]
+#   MONDAY_WEBHOOK_SECRET  — shared secret guarding /api/monday-webhook     [Phase 3]
+#   GH_DISPATCH_TOKEN      — GitHub PAT (contents:write) to trigger rebuilds [Phase 3]
+#   GH_REPO                — "owner/repo" for the repository_dispatch call   [Phase 3]

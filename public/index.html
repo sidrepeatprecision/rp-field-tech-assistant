@@ -1,25 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!--
+    Field Tech Assistant — mobile-first PWA shell.
+    The <head> sets up the installable web-app metadata (manifest, icons,
+    theme color, iOS home-screen behavior). `marked` is loaded from a CDN to
+    render the bot's Markdown replies; app.js drives everything.
+  -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#1E2D5B">
+  <meta name="theme-color" content="#1D3552">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="RP Field Tech">
   <title>RP Field Tech Assistant</title>
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="apple-touch-icon" href="/icon-192.png">
-  <link rel="icon" type="image/png" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="/rp-logo-navy.png">
+  <link rel="icon" type="image/png" href="/rp-logo-navy.png">
+
+  <!-- Repeat Precision brand fonts (see rp_theme/DESIGN_SYSTEM.md):
+       Syne = titles · Nunito Sans = body · JetBrains Mono = labels · Teko = display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;500;600;700&family=Syne:wght@600;700;800&family=Nunito+Sans:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Apply the saved light/dark choice BEFORE first paint to avoid a flash.
+       If nothing is saved, the CSS falls back to the device's system setting. -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("rp-theme");
+        if (t === "light" || t === "dark") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <link rel="stylesheet" href="/style.css">
   <script src="https://cdn.jsdelivr.net/npm/marked@13.0.3/marked.min.js" defer></script>
 </head>
 <body>
+  <!-- Sticky top bar: RP logo (white, on navy) + app name + "New" button. -->
   <header class="app-header">
-    <div class="app-title">RP Field Tech</div>
-    <button id="new-chat" class="ghost-btn" type="button" aria-label="Start new chat">New</button>
+    <div class="brand">
+      <img class="logo-img" src="/rp-logo-white.png" alt="Repeat Precision" />
+      <span class="app-sub">Field Tech Assistant</span>
+    </div>
+    <div class="header-right">
+      <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch theme"></button>
+      <button id="new-chat" class="ghost-btn" type="button" aria-label="Start new chat">New</button>
+    </div>
   </header>
 
+  <!-- Scrollable chat transcript. app.js appends message bubbles here.
+       Starts with a welcome card explaining what the bot can answer. -->
   <main id="messages" class="messages" aria-live="polite">
     <div class="welcome">
       <p>Ask about PurpleSeal™ / PurpleReign™ frac plugs, pumpdown rates, WLAK components, shear ratings, setting tools, or any ENG-TB bulletin.</p>
@@ -27,6 +62,7 @@
     </div>
   </main>
 
+  <!-- Bottom composer: auto-growing textarea + send button. -->
   <form id="composer" class="composer" autocomplete="off">
     <textarea
       id="prompt"

@@ -8,3 +8,13 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+
+# Secrets — never commit
+.env
+.monday_token*
+scripts/.monday_token*
+
+# Local / not part of the repo
+.claude/
+rp_theme/
+*.zip

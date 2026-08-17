@@ -4,8 +4,8 @@
   "description": "Quick answers from RP training guides, technical bulletins, and field service manuals.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1E2D5B",
-  "theme_color": "#1E2D5B",
+  "background_color": "#1D3552",
+  "theme_color": "#1D3552",
   "orientation": "portrait",
   "icons": [
     {

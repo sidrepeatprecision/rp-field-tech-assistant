@@ -11,7 +11,7 @@ behind it, and the surprises along the way. The `README.md` covers
 A mobile web app at `https://rp-fieldtech.gmartin-be3.workers.dev/` that
 lets Repeat Precision field techs ask plain-language questions about
 PurpleSeal™ / PurpleReign™ products, pumpdown rates, WLAK components,
-shear ratings, setting tools, and procedures. Claude Sonnet 4.6 answers
+shear ratings, setting tools, and procedures. Claude Sonnet 5 answers
 using the company's training guides, technical bulletins, and field
 service manuals as cached context, citing the source document in every
 answer.
@@ -54,7 +54,7 @@ We scoped it together via a series of clarifying questions:
 - Refuse out-of-scope questions; cite source documents
 - Text only (no voice/photo for v1)
 - Cloudflare Pages + Workers
-- Sonnet 4.6 model
+- Sonnet 5 model
 - Free workers.dev subdomain, no persistence
 
 That scoping took ~10 minutes and saved a lot of rework later.

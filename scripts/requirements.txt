@@ -1,2 +1,5 @@
+requests>=2.31.0
+
+# Legacy OneDrive builder only (build-knowledge.py) — no longer the primary source:
 pymupdf4llm>=0.0.17
 mammoth>=1.8.0

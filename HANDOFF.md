@@ -34,7 +34,7 @@ If those two make sense, you know 95% of the system.
 - **GitHub repo:** https://github.com/WGrantMartin/rp-fieldtech-assistant
 - **Deploy flow:** `git push main` → GitHub Actions → Cloudflare Worker, ~1–2 min
 - **Auth:** Cloudflare Zero Trust One-Time PIN to `@repeatprecision.com` addresses
-- **Model:** Claude Sonnet 4.6 via Anthropic API
+- **Model:** Claude Sonnet 5 via Anthropic API
 - **Knowledge corpus:** built by `scripts/build-knowledge.py` from PDFs/DOCX in
   the OneDrive training guides folder; occasional hand-typed `.md` companions
   for graph-heavy chart PDFs.

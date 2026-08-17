@@ -1,33 +1,69 @@
+/*
+ * Field Tech Assistant styles — Repeat Precision brand.
+ * Palette, fonts, and logo follow rp_theme/DESIGN_SYSTEM.md:
+ *   navy #1D3552 (header/primary), purple #732CFD (accent/interactive),
+ *   red #F41234 (alert). Fonts: Nunito Sans (body), Syne (titles),
+ *   JetBrains Mono (labels). Layout is a column: sticky header, scrolling
+ *   message list, sticky composer. Dark mode auto-follows the device.
+ */
+
+/* --- Design tokens: light theme (RP brand) --- */
 :root {
-  --brand: #1E2D5B;
+  --brand: #1D3552;      /* RP navy — header, user bubble text contrast */
   --brand-fg: #ffffff;
-  --bg: #f4f5f8;
+  --accent: #732CFD;     /* RP purple — send button, focus, user bubble */
+  --alert: #F41234;      /* RP red — errors */
+  --rp-blue: #D9E4F0;    /* sub-text on the navy header */
+
+  --bg: #f4f7fb;
   --surface: #ffffff;
-  --text: #1a1a1a;
-  --muted: #5d6772;
-  --border: #e0e3e8;
-  --user-bg: #1E2D5B;
+  --surface-2: #eef3f9;
+  --text: #1D3552;       /* ink */
+  --muted: #5a6b82;      /* ink-dim */
+  --border: #dbe5f0;     /* line */
+
+  --user-bg: #732CFD;    /* user messages in accent purple */
   --user-fg: #ffffff;
   --bot-bg: #ffffff;
-  --bot-fg: #1a1a1a;
-  --warn: #856404;
-  --warn-bg: #FFF3CD;
+  --bot-fg: #1D3552;
+
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
 }
 
+/* --- Design tokens: dark theme (only the values that differ) ---
+ * Theme resolution (light is the :root default above):
+ *   - no saved choice  → follow the device via prefers-color-scheme
+ *   - user picks light  → data-theme="light" forces light even on a dark device
+ *   - user picks dark   → data-theme="dark" forces dark even on a light device
+ * The dark token block is repeated for the system case and the explicit case.
+ * accent purple and the user bubble stay the same — they read well on dark. */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f1419;
-    --surface: #1a1f2e;
-    --text: #e8eaed;
-    --muted: #9aa3ad;
-    --border: #2a3142;
-    --bot-bg: #1a1f2e;
-    --bot-fg: #e8eaed;
+  :root:not([data-theme="light"]) {
+    --brand: #16273d;    /* RP dark navyblock */
+    --bg: #0e1a2b;
+    --surface: #16273d;
+    --surface-2: #1d3552;
+    --text: #f4f6fa;
+    --muted: #9aabc4;
+    --border: #2a4068;
+    --bot-bg: #16273d;
+    --bot-fg: #f4f6fa;
   }
 }
+:root[data-theme="dark"] {
+  --brand: #16273d;
+  --bg: #0e1a2b;
+  --surface: #16273d;
+  --surface-2: #1d3552;
+  --text: #f4f6fa;
+  --muted: #9aabc4;
+  --border: #2a4068;
+  --bot-bg: #16273d;
+  --bot-fg: #f4f6fa;
+}
 
+/* --- Base layout: full-height flex column --- */
 * { box-sizing: border-box; }
 
 html, body {
@@ -36,7 +72,7 @@ html, body {
   height: 100%;
   background: var(--bg);
   color: var(--text);
-  font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font: 16px/1.45 "Nunito Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: contain;
 }
@@ -47,6 +83,7 @@ body {
   min-height: 100dvh;
 }
 
+/* --- Header (navy bar with white RP logo) --- */
 .app-header {
   position: sticky;
   top: 0;
@@ -54,28 +91,83 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: calc(var(--safe-top) + 10px) 16px 10px;
   background: var(--brand);
   color: var(--brand-fg);
-  font-weight: 600;
-  letter-spacing: 0.2px;
 }
 
-.app-title { font-size: 17px; }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0; /* let the logo shrink instead of overflowing on tiny screens */
+}
+
+/* The logo PNG already contains the "REPEAT PRECISION" wordmark. */
+.logo-img {
+  height: 30px;
+  width: auto;
+  display: block;
+}
+
+/* App name shown beside the logo, mono + a subtle divider (rp_theme .brand-sub). */
+.app-sub {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--rp-blue);
+  border-left: 1px solid rgba(255, 255, 255, 0.28);
+  padding-left: 12px;
+  white-space: nowrap;
+}
+
+/* Hide the sublabel on very narrow phones so the logo + New button always fit. */
+@media (max-width: 400px) {
+  .app-sub { display: none; }
+}
+
+/* Right-side header controls: theme toggle + New. */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Round icon button (theme toggle), same outline language as .ghost-btn. */
+.icon-btn {
+  background: transparent;
+  color: var(--brand-fg);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.icon-btn:active { background: rgba(255, 255, 255, 0.1); }
 
 .ghost-btn {
   background: transparent;
   color: var(--brand-fg);
-  border: 1px solid rgba(255,255,255,0.45);
+  border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: 999px;
   padding: 6px 14px;
-  font-size: 14px;
-  font-weight: 500;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   min-height: 32px;
   cursor: pointer;
 }
-.ghost-btn:active { background: rgba(255,255,255,0.1); }
+.ghost-btn:active { background: rgba(255, 255, 255, 0.1); }
 
+/* --- Message list + welcome card --- */
 .messages {
   flex: 1;
   overflow-y: auto;
@@ -97,6 +189,7 @@ body {
 .welcome p:last-child { margin-bottom: 0; }
 .welcome .muted { color: var(--muted); font-size: 13px; }
 
+/* --- Message bubbles (user, bot, error) --- */
 .msg {
   max-width: 92%;
   padding: 12px 14px;
@@ -127,27 +220,29 @@ body {
 .msg.bot p:last-child { margin-bottom: 0; }
 .msg.bot ul, .msg.bot ol { margin: 6px 0; padding-left: 22px; }
 .msg.bot code {
-  background: rgba(127,127,127,0.18);
+  background: rgba(115, 44, 253, 0.12); /* faint purple tint */
   padding: 1px 5px;
   border-radius: 4px;
   font-size: 14px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 .msg.bot pre {
-  background: rgba(127,127,127,0.12);
+  background: rgba(115, 44, 253, 0.10);
   padding: 10px;
   border-radius: 8px;
   overflow-x: auto;
   font-size: 14px;
 }
-.msg.bot strong { font-weight: 600; }
+.msg.bot pre code { background: none; padding: 0; }
+.msg.bot strong { font-weight: 700; }
 
 .msg.bot.error {
-  border-color: #c00;
-  color: #c00;
-  background: rgba(204,0,0,0.06);
+  border-color: var(--alert);
+  color: var(--alert);
+  background: rgba(244, 18, 52, 0.06);
 }
 
+/* --- Animated "typing…" indicator --- */
 .typing {
   display: inline-flex;
   gap: 4px;
@@ -166,6 +261,7 @@ body {
   30% { opacity: 1; }
 }
 
+/* --- Composer: textarea + send button --- */
 .composer {
   position: sticky;
   bottom: 0;
@@ -189,7 +285,7 @@ textarea#prompt {
   max-height: 140px;
   outline: none;
 }
-textarea#prompt:focus { border-color: var(--brand); }
+textarea#prompt:focus { border-color: var(--accent); }
 
 button#send {
   flex: 0 0 auto;
@@ -197,8 +293,8 @@ button#send {
   height: 44px;
   border-radius: 50%;
   border: none;
-  background: var(--brand);
-  color: var(--brand-fg);
+  background: var(--accent);
+  color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
