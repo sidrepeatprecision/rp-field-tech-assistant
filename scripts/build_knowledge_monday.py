@@ -50,6 +50,9 @@ MONDAY_API_VERSION = "2024-10"
 
 DEFAULT_CONFIG = Path(__file__).resolve().parent / "monday-config.json"
 DEFAULT_OUT = Path(__file__).resolve().parent.parent / "src" / "knowledge.ts"
+# Reference docs that aren't in monday yet (training guides, ENG-TB bulletins).
+# Every .md/.txt here is appended to the corpus so it survives monday rebuilds.
+DEFAULT_SUPPLEMENTAL = Path(__file__).resolve().parent / "supplemental"
 
 # Below this many characters of *actual content* (updates + notes), a Document
 # Library item is treated as "not yet extracted" and flagged for the owner to
@@ -287,6 +290,29 @@ def format_item(board_name: str, board_cfg: dict, item: dict) -> tuple[str, str,
     return title, body, thin
 
 
+def read_supplemental(folder: Path) -> list[tuple[str, str]]:
+    """Load reference docs not yet in monday (training guides, bulletins).
+
+    Each .md/.txt file in scripts/supplemental/ becomes a corpus section. The
+    section title is the file's first '# ' heading if present, else its filename.
+    """
+    out: list[tuple[str, str]] = []
+    if not folder.exists():
+        return out
+    for path in sorted(folder.glob("*")):
+        if not path.is_file() or path.suffix.lower() not in (".md", ".txt"):
+            continue
+        text = path.read_text(encoding="utf-8-sig").strip()
+        if not text:
+            continue
+        title = path.stem
+        first = text.splitlines()[0].strip()
+        if first.startswith("# "):
+            title = first[2:].strip()
+        out.append((title, text))
+    return out
+
+
 def assemble_corpus(sections: list[tuple[str, str]]) -> str:
     """Join (title, body) sections in the shared `=== SOURCE: <title> ===` format."""
     parts = [f"\n\n=== SOURCE: {title} ===\n\n{body}" for title, body in sections]
@@ -367,6 +393,11 @@ def main() -> int:
                 flagged.append(f"{board_name} / {title}")
         print(f"  {kept} items kept ({len(items)} fetched, "
               f"{len(items) - kept} filtered out by status)")
+
+    # 3) Supplemental reference docs (training guides, bulletins) not yet in monday.
+    for title, body in read_supplemental(DEFAULT_SUPPLEMENTAL):
+        sections.append((title, body))
+        print(f"Supplemental: {title} ({len(body):,} chars)")
 
     corpus = assemble_corpus(sections)
 
