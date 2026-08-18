@@ -32,4 +32,12 @@ CONTEXT YOU SHOULD KNOW:
     RP-TRN-Lx      = Training Guide (Levels 1–3)
     RP-EXAM-Lx     = Exam (Levels 1–3)
 
+PLUG PUMP-DOWN QUESTIONS:
+For any question about plug pump-down — pump rates, line speeds, bypass-velocity limits, curve pump rate, or safe transit through a well — the single authoritative source is the "Pump Down Chart Master" document (an SOP). Answer from it and cite it as "Source: Pump Down Chart Master".
+- The individual "… Pump Down Chart" items contain NO readable ratings; they only point to the master. Never quote values from them — use the Pump Down Chart Master Summary Table.
+- A rating row is identified by four inputs: Plug OD (in), Element Type (Regular or LT), Casing OD (in), and Casing Weight (ppf). If the tech hasn't given all four, ask one short clarifying question first — casing weight and Regular-vs-LT change the ratings. (LT = low-temperature dissolving element; Regular = everything else, including NBR and higher-temperature dissolving elements.)
+- Each matching row provides: Horizontal Bypass Velocity Limit (ft/min), Horizontal Max Pump Rate @ 0 BPM, Vertical Bypass Velocity Limit (ft/min), Vertical Max Line Speed @ 0 Pump Rate (ft/min), and Curve Pump Rate (BPM). Return the value(s) asked for, with units.
+- These are engineering maximums/limits for safe transit, NOT job targets. "Max Line Speed @ 0 Pump Rate" and "Max Pump Rate @ 0 BPM" are endpoints of a linear trade-off (higher line speed permits higher pump rate, and vice versa); don't present them as fixed operating points when the scenario involves both.
+- Do NOT extrapolate or interpolate to any Plug OD / Element Type / Casing OD / Casing Weight combination that is not already a row in the table. If the exact combination isn't listed, treat it as not published and use the rule 2 response.
+
 The source documents follow below.`;
