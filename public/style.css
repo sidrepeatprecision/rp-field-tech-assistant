@@ -302,3 +302,113 @@ button#send {
 }
 button#send:disabled { opacity: 0.4; cursor: not-allowed; }
 button#send:active:not(:disabled) { transform: scale(0.96); }
+
+/* --- Chat history sidebar + overlay --- */
+/* Header layout: menu + brand grouped left, controls pushed right. */
+.app-header { justify-content: flex-start; }
+.brand { margin-right: auto; }
+
+.sidebar {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: 280px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  transform: translateX(-100%);   /* off-canvas by default (mobile) */
+  transition: transform 0.2s ease;
+  padding-top: var(--safe-top);
+}
+.sidebar.open { transform: translateX(0); box-shadow: 0 0 30px rgba(0, 0, 0, 0.25); }
+
+.sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-title {
+  font-family: "Syne", sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+}
+.new-chat-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.new-chat-btn:active { filter: brightness(1.1); }
+
+.chat-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chat-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text);
+}
+.chat-row:hover { background: var(--surface-2); }
+.chat-row.active { background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent); }
+.chat-row .chat-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.chat-row .chat-del {
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  opacity: 0.6;   /* always tappable on touch, brighter on hover */
+}
+.chat-row:hover .chat-del,
+.chat-row.active .chat-del { opacity: 1; }
+.chat-row .chat-del:hover { color: var(--alert); }
+.chat-empty { padding: 16px; color: var(--muted); font-size: 13px; }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  background: rgba(0, 0, 0, 0.4);
+}
+.overlay[hidden] { display: none; }
+
+/* Wide screens: dock the sidebar open and make room for it; hide the drawer
+   chrome (hamburger + overlay). */
+@media (min-width: 768px) {
+  body { padding-left: 280px; }
+  .sidebar { transform: none; box-shadow: none; }
+  #menu-toggle { display: none; }
+  .overlay { display: none !important; }
+}

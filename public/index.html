@@ -41,17 +41,29 @@
   <script src="https://cdn.jsdelivr.net/npm/marked@13.0.3/marked.min.js" defer></script>
 </head>
 <body>
-  <!-- Sticky top bar: RP logo (white, on navy) + app name + "New" button. -->
+  <!-- Sticky top bar: menu (opens chat history) + RP logo + app name + theme. -->
   <header class="app-header">
+    <button id="menu-toggle" class="icon-btn" type="button" aria-label="Open chats">☰</button>
     <div class="brand">
       <img class="logo-img" src="/rp-logo-white.png" alt="Repeat Precision" />
       <span class="app-sub">Field Tech Assistant</span>
     </div>
     <div class="header-right">
       <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch theme"></button>
-      <button id="new-chat" class="ghost-btn" type="button" aria-label="Start new chat">New</button>
     </div>
   </header>
+
+  <!-- Left panel: this device's saved chats + a New button. On phones it slides
+       in over an overlay (toggled by the header ☰); on wide screens it's docked
+       open. Chats live in the browser's localStorage (see app.js). -->
+  <aside id="sidebar" class="sidebar" aria-label="Chat history">
+    <div class="sidebar-head">
+      <span class="sidebar-title">Chats</span>
+      <button id="new-chat" class="new-chat-btn" type="button">+ New</button>
+    </div>
+    <ul id="chat-list" class="chat-list"></ul>
+  </aside>
+  <div id="overlay" class="overlay" hidden></div>
 
   <!-- Scrollable chat transcript. app.js appends message bubbles here.
        Starts with a welcome card explaining what the bot can answer. -->
