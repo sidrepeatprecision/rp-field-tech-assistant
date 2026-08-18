@@ -27,7 +27,12 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # Secret names listed here are written to the Worker before deploy.
+          # Create/update the Worker first, so `wrangler secret put` has a script
+          # to attach to. Without this, the very first deploy on a fresh account
+          # fails with "Failed to upload secrets" (secrets upload before deploy).
+          # Idempotent/harmless on later runs.
+          preCommands: npx wrangler deploy
+          # Secret names listed here are uploaded via `wrangler secret put`.
           # Their values come from the env block below (GH Actions secrets).
           secrets: |
             ANTHROPIC_API_KEY
