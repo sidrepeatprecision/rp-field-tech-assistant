@@ -560,36 +560,54 @@ button#send:active:not(:disabled) { transform: scale(0.96); }
 
 /* ============================================================
    Pill scrollbars — thin, rounded, brand-tinted.
-   Primary target is the "Ask a question" textarea; applied to the other
-   scroll areas too for a consistent look.
    ============================================================ */
-textarea#prompt,
+
+/* Large scroll panels (transcript + chat list): a slim pill at the edge. */
 .messages,
 .chat-list {
   scrollbar-width: thin;                       /* Firefox */
   scrollbar-color: var(--accent) transparent;
 }
-textarea#prompt::-webkit-scrollbar,
 .messages::-webkit-scrollbar,
-.chat-list::-webkit-scrollbar {
-  width: 8px;
-}
-textarea#prompt::-webkit-scrollbar-track,
+.chat-list::-webkit-scrollbar { width: 8px; }
 .messages::-webkit-scrollbar-track,
-.chat-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-textarea#prompt::-webkit-scrollbar-thumb,
+.chat-list::-webkit-scrollbar-track { background: transparent; }
 .messages::-webkit-scrollbar-thumb,
 .chat-list::-webkit-scrollbar-thumb {
   background: var(--accent);
-  border-radius: 999px;                        /* pill */
-  border: 2px solid transparent;               /* inset the pill from the edge */
+  border-radius: 999px;
+  border: 2px solid transparent;
   background-clip: content-box;
 }
-textarea#prompt::-webkit-scrollbar-thumb:hover,
 .messages::-webkit-scrollbar-thumb:hover,
 .chat-list::-webkit-scrollbar-thumb:hover {
+  background: var(--brand);
+  background-clip: content-box;
+}
+
+/* "Ask a question" field: the thumb must sit fully INSIDE the rounded pill,
+   not hug the straight right edge or spill past the corner curves. We inset it
+   from the right edge (asymmetric transparent border, pulled left) and hold it
+   clear of the rounded top/bottom corners (track margin).
+   NOTE: we deliberately do NOT set `scrollbar-width` here — in Chromium that
+   standard property disables the ::-webkit-scrollbar sizing/positioning below.
+   Firefox falls back to its default narrow scrollbar, which is acceptable. */
+textarea#prompt::-webkit-scrollbar { width: 16px; }   /* wide gutter to inset into */
+textarea#prompt::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 14px 0;                              /* clear the 20px rounded corners */
+}
+textarea#prompt::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 999px;
+  /* Transparent border becomes breathing room via content-box clip; the wider
+     right border floats the pill in from the field's right edge. */
+  border: 4px solid transparent;
+  border-right-width: 8px;
+  background-clip: content-box;
+  min-height: 26px;
+}
+textarea#prompt::-webkit-scrollbar-thumb:hover {
   background: var(--brand);
   background-clip: content-box;
 }
@@ -649,4 +667,22 @@ textarea#prompt::-webkit-scrollbar-thumb:hover,
 @media (prefers-reduced-motion: reduce) {
   .splash-inner { animation: none; }
   .splash-spinner { animation: none; }
+}
+
+/* ============================================================
+   Touch targets — larger hit areas on touch devices only, so the
+   desktop chrome stays compact. ~40px+ meets mobile tap guidance.
+   ============================================================ */
+@media (pointer: coarse) {
+  .icon-btn { width: 40px; height: 40px; font-size: 17px; }
+  .ghost-btn { min-height: 40px; }
+  .new-chat-btn { padding: 10px 14px; }
+  /* Bigger "⋮" hit area without visually enlarging the glyph much. */
+  .chat-menu-btn { padding: 8px 10px; font-size: 20px; }
+  .chat-row { padding: 12px 10px; }
+  .chat-menu button { padding: 12px 12px; }
+  .profile-action { padding: 12px; }
+  /* Comfortable default composer height on touch. */
+  textarea#prompt { min-height: 48px; }
+  button#send { width: 48px; height: 48px; }
 }
