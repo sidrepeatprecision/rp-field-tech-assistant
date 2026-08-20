@@ -51,6 +51,8 @@
         "exclude": ["Old Revision", "Obsolete"],
         "_comment": "Default to current guidance only. Old Revision/Obsolete live in the Archive group and would bloat the corpus with stale content."
       },
+      "exclude_groups": ["Archive"],
+      "_exclude_groups_comment": "Carve out the Archive section entirely — stale/superseded records the field bot must not surface, regardless of item status. Matched by group title, case-insensitive.",
       "groups": [
         { "id": "group_mm49zpvc", "title": "Field Service Manuals" },
         { "id": "group_mm49heca", "title": "SOPs" },
@@ -92,6 +94,8 @@
         "exclude": ["Obsolete"],
         "_comment": "Keep everything else; label each part's status so the model can flag On Hold / Phasing Out / Initial Field Trials appropriately."
       },
+      "exclude_groups": ["Archive"],
+      "_exclude_groups_comment": "No Archive group exists on this board today, but exclude it defensively so a future Archive section is never surfaced. Matched by group title, case-insensitive.",
       "groups": [
         { "id": "group_mm2askns", "title": "PurpleSeal Frac Plugs" },
         { "id": "group_mm2aqeap", "title": "PurpleSeal StageSaver" },

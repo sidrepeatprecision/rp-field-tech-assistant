@@ -241,6 +241,21 @@ def passes_status_filter(item: dict, status_filter: dict | None) -> bool:
     return status not in exclude
 
 
+# Groups whose items are always dropped, regardless of per-board config. The
+# "Archive" section on a board holds stale/superseded records the field bot
+# should never surface, so we carve it out no matter which view/board is read.
+ALWAYS_EXCLUDE_GROUPS = ["archive"]
+
+
+def passes_group_filter(item: dict, exclude_groups: list[str] | None) -> bool:
+    """False if the item lives in an excluded group (match by title, case-insensitive)."""
+    group_title = ((item.get("group") or {}).get("title") or "").strip().lower()
+    if not group_title:
+        return True
+    blocked = {g.strip().lower() for g in (exclude_groups or [])} | set(ALWAYS_EXCLUDE_GROUPS)
+    return group_title not in blocked
+
+
 def format_item(board_name: str, board_cfg: dict, item: dict) -> tuple[str, str, bool]:
     """Build one corpus section for an item.
 
@@ -379,12 +394,18 @@ def main() -> int:
         board_name = board["name"]
         col_ids = [c["id"] for c in board.get("include_columns", [])]
         status_filter = board.get("status_filter")
+        exclude_groups = board.get("exclude_groups")
         print(f"Fetching board '{board_name}' ({board['id']}) ...")
 
         items = fetch_board_items(session, board["id"], col_ids)
-        kept = 0
+        kept = dropped_group = dropped_status = 0
         for item in items:
+            # Group carve-out (e.g. "Archive") takes precedence over status.
+            if not passes_group_filter(item, exclude_groups):
+                dropped_group += 1
+                continue
             if not passes_status_filter(item, status_filter):
+                dropped_status += 1
                 continue
             title, body, thin = format_item(board_name, board, item)
             sections.append((title, body))
@@ -392,7 +413,8 @@ def main() -> int:
             if thin:
                 flagged.append(f"{board_name} / {title}")
         print(f"  {kept} items kept ({len(items)} fetched, "
-              f"{len(items) - kept} filtered out by status)")
+              f"{dropped_status} filtered out by status, "
+              f"{dropped_group} in excluded groups)")
 
     # 3) Supplemental reference docs (training guides, bulletins) not yet in monday.
     for title, body in read_supplemental(DEFAULT_SUPPLEMENTAL):
