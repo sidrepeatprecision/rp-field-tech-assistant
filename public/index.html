@@ -15,8 +15,9 @@
   <meta name="apple-mobile-web-app-title" content="RP Field Tech">
   <title>RP Field Tech Assistant</title>
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="apple-touch-icon" href="/rp-logo-navy.png">
-  <link rel="icon" type="image/png" href="/rp-logo-navy.png">
+  <!-- Browser-tab icon: the Repeat Precision mark only (no wordmark). -->
+  <link rel="apple-touch-icon" href="/rp-mark.png">
+  <link rel="icon" type="image/png" href="/favicon-64.png">
 
   <!-- Repeat Precision brand fonts (see rp_theme/DESIGN_SYSTEM.md):
        Syne = titles · Nunito Sans = body · JetBrains Mono = labels · Teko = display -->
@@ -37,11 +38,21 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/style.css?v=2">
   <script src="https://cdn.jsdelivr.net/npm/marked@13.0.3/marked.min.js" defer></script>
 </head>
 <body>
-  <!-- Sticky top bar: menu (opens chat history) + RP logo + app name + theme. -->
+  <!-- Aesthetic splash: shown on every load/reload, then fades out. Pure chrome —
+       it holds no state and blocks nothing. app.js removes it after a beat. -->
+  <div id="splash" class="splash" role="presentation">
+    <div class="splash-inner">
+      <img class="splash-logo" src="/rp-logo-white.png" alt="Repeat Precision" />
+      <div class="splash-title">Field Tech Assistant</div>
+      <div class="splash-spinner" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <!-- Sticky top bar: menu (opens chat history) + RP logo + app name + theme + profile. -->
   <header class="app-header">
     <button id="menu-toggle" class="icon-btn" type="button" aria-label="Open chats">☰</button>
     <div class="brand">
@@ -50,6 +61,24 @@
     </div>
     <div class="header-right">
       <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch theme"></button>
+
+      <!-- Profile: click to open a popover with the signed-in user + logout. -->
+      <div class="profile-wrap">
+        <button id="profile-toggle" class="icon-btn profile-btn" type="button"
+                aria-label="Profile" aria-haspopup="true" aria-expanded="false">
+          <span id="profile-initials" class="profile-initials">–</span>
+        </button>
+        <div id="profile-menu" class="profile-menu" role="menu" hidden>
+          <div class="profile-head">
+            <div class="profile-avatar"><img src="/rp-mark.png" alt="" /></div>
+            <div class="profile-id">
+              <div id="profile-name" class="profile-name">Signed in</div>
+              <div id="profile-email" class="profile-email">—</div>
+            </div>
+          </div>
+          <button id="logout-btn" class="profile-action" type="button" role="menuitem">Log out</button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -94,6 +123,6 @@
     </button>
   </form>
 
-  <script src="/app.js" defer></script>
+  <script src="/app.js?v=2" defer></script>
 </body>
 </html>
