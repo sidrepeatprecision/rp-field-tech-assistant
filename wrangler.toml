@@ -11,9 +11,14 @@ directory = "./public"
 binding = "ASSETS"
 run_worker_first = true
 
+# Non-secret vars (safe to commit). GH_REPO is just the target of the
+# repository_dispatch call the webhook relay fires — no need to hide it.
+[vars]
+GH_REPO = "sidrepeatprecision/rp-field-tech-assistant"
+
 # Worker secrets (managed via GitHub Actions — the deploy workflows run
 # `wrangler secret put` before deploying; values come from repo Actions secrets):
-#   ANTHROPIC_API_KEY      — Anthropic API key (sk-ant-api03-...)          [required]
-#   MONDAY_WEBHOOK_SECRET  — shared secret guarding /api/monday-webhook     [Phase 3]
-#   GH_DISPATCH_TOKEN      — GitHub PAT (contents:write) to trigger rebuilds [Phase 3]
-#   GH_REPO                — "owner/repo" for the repository_dispatch call   [Phase 3]
+#   ANTHROPIC_API_KEY      — Anthropic API key (sk-ant-api03-...)             [required]
+#   MONDAY_WEBHOOK_SECRET  — shared secret guarding /api/monday-webhook       [instant updates]
+#   GH_DISPATCH_TOKEN      — GitHub fine-grained PAT (Contents: R/W) to fire  [instant updates]
+#                            the repository_dispatch rebuild
