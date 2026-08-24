@@ -67,14 +67,16 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # Re-assert the Worker secrets on deploy (values from GH Actions secrets).
+          # Ensure the Worker exists before `wrangler secret put` runs (mirrors
+          # deploy.yml; idempotent on later runs).
+          preCommands: npx wrangler deploy
+          # Only re-assert the always-present secret. The monday-webhook relay
+          # secrets (MONDAY_WEBHOOK_SECRET / GH_DISPATCH_TOKEN / GH_REPO) are
+          # optional and persist across deploys once set — listing them here
+          # while they're unset makes wrangler-action fail ("Value for secret
+          # ... not found in environment"). Re-add them here only if you also
+          # add them as repo secrets when enabling the instant-webhook path.
           secrets: |
             ANTHROPIC_API_KEY
-            MONDAY_WEBHOOK_SECRET
-            GH_DISPATCH_TOKEN
-            GH_REPO
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          MONDAY_WEBHOOK_SECRET: ${{ secrets.MONDAY_WEBHOOK_SECRET }}
-          GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
-          GH_REPO: ${{ secrets.GH_REPO }}
