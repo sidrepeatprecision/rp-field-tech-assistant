@@ -34,7 +34,13 @@ jobs:
           preCommands: npx wrangler deploy
           # Secret names listed here are uploaded via `wrangler secret put`.
           # Their values come from the env block below (GH Actions secrets).
+          # MONDAY_WEBHOOK_SECRET + GH_DISPATCH_TOKEN power the instant-webhook
+          # relay (GH_REPO is a plain var in wrangler.toml).
           secrets: |
             ANTHROPIC_API_KEY
+            MONDAY_WEBHOOK_SECRET
+            GH_DISPATCH_TOKEN
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MONDAY_WEBHOOK_SECRET: ${{ secrets.MONDAY_WEBHOOK_SECRET }}
+          GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
